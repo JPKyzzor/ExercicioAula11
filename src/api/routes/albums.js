@@ -5,8 +5,6 @@ const router = express.Router();
 const mongoose = require('mongoose');
 
 mongoose.connect('mongodb://127.0.0.1:27017/albums', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
 });
 
 mongoose.connection.on('connected', () => {
@@ -60,6 +58,19 @@ router.post('/', async (req, res) => {
   } catch (err) {
     console.error('Erro ao inserir álbuns:', err.message);
     res.status(500).json({ error: 'Erro ao inserir álbuns' });
+  }
+});
+
+
+// Rota para deletar todos os registros presentes no banco de dados
+router.delete('/', async (req, res) => {
+  try {
+    const deleteResult = await Album.deleteMany({});
+    console.log(`${deleteResult.deletedCount} registros deletados com sucesso!`);
+    res.status(200).json({ message: `${deleteResult.deletedCount} registros deletados com sucesso!` });
+  } catch (error) {
+    console.error('Erro ao excluir registros:', error.message);
+    res.status(500).json({ error: 'Erro ao excluir registros' });
   }
 });
 
