@@ -4,6 +4,8 @@ const routes = require("./api/routes");
 const Axios = require("axios");
 const readline = require("readline");
 
+app.use(express.json());  // Adicione este middleware para processar JSON no corpo das requisições
+
 app.use(function (req, res, next) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
@@ -77,7 +79,7 @@ const rl = readline.createInterface({
 });
 
 rl.question(
-  "Escolha o banco de dados para inserção ou limpeza:\n1- Inserir no MongoDB\n2- Inserir no Cassandra\n3- Limpar MongoDB\n4- Limpar Cassandra\n",
+  "Escolha o banco de dados para inserção ou limpeza:\n1- Inserir no MongoDB\n2- Inserir no Cassandra\n3- Limpar MongoDB\n4- Limpar Cassandra\n5- Inserir no DynamoDB\n6- Limpar DynamoDB\n",
   async function (answer) {
     if (answer === "1") {
       await inserirDados("albums", "MongoDB");
@@ -91,8 +93,14 @@ rl.question(
     } else if (answer === "4") {
       await removerDados("albumsCassandra", "Cassandra");
       rl.close();
+    } else if (answer === "5") {
+      await inserirDados("albumsDynamo", "DynamoDB");
+      rl.close();
+    } else if (answer === "6") {
+      await removerDados("albumsDynamo", "DynamoDB");
+      rl.close();
     } else {
-      console.log("Escolha inválida. Por favor, escolha 1, 2, 3 ou 4.");
+      console.log("Escolha inválida. Por favor, escolha 1, 2, 3, 4, 5 ou 6.");
       rl.close();
     }
   }

@@ -1,4 +1,4 @@
-// albums.js
+/* // albums.js
 
 const express = require('express');
 const router = express.Router();
@@ -75,3 +75,4 @@ router.delete('/', async (req, res) => {
 });
 
 module.exports = router;
+ */

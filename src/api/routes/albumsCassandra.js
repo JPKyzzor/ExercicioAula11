@@ -1,4 +1,4 @@
-const express = require('express');
+/* const express = require('express');
 const router = express.Router();
 const cassandra = require('cassandra-driver');
 
@@ -130,3 +130,4 @@ router.delete('/', async (req, res) => {
 });
 
 module.exports = router;
+ */

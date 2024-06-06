@@ -10,9 +10,11 @@
   "author": "João Pedro Carlos da Silva",
   "license": "ISC",
   "dependencies": {
+    "aws-sdk": "^2.1634.0",
     "axios": "^1.7.2",
     "cassandra-driver": "^4.7.2",
     "express": "^4.19.2",
-    "mongoose": "^8.4.0"
+    "mongoose": "^8.4.0",
+    "uuid": "^9.0.1"
   }
 }
