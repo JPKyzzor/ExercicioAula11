@@ -10,9 +10,10 @@ AWS.config.update({
 }); // Defina a região AWS correta
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
+const DynamoDB = new AWS.DynamoDB();
 const tableName = 'Albums'; // Nome da tabela no DynamoDB
-
-// Função para criar a tabela de álbuns no DynamoDB
+const indexName = 'ArtistaIndex';
+//Cria Tabela Normal
 const createTable = async () => {
   const params = {
     TableName: tableName,
@@ -37,6 +38,40 @@ const createTable = async () => {
   }
 };
 
+// const atualizarTabela = async () =>{
+// const params = {
+//   TableName: 'Albums',
+//   AttributeDefinitions: [
+//     { AttributeName: 'artista', AttributeType: 'S' }
+//   ],
+//   GlobalSecondaryIndexUpdates: [
+//     {
+//       Create: {
+//         IndexName: 'ArtistaIndex',
+//         KeySchema: [
+//           { AttributeName: 'artista', KeyType: 'HASH' }
+//         ],
+//         Projection: {
+//           ProjectionType: 'ALL'
+//         },
+//         ProvisionedThroughput: {
+//           ReadCapacityUnits: 5,
+//           WriteCapacityUnits: 5
+//         }
+//       }
+//     }
+//   ]
+// };
+
+// DynamoDB.updateTable(params, function (err, data) {
+//   if (err) {
+//     console.error("Erro ao adicionar índice. JSON:", JSON.stringify(err, null, 2));
+//   } else {
+//     console.log("Índice adicionado com sucesso. JSON:", JSON.stringify(data, null, 2));
+//   }
+// });
+// }
+// atualizarTabela();
 // Função para inserir um álbum no DynamoDB
 const insertAlbum = async (album) => {
   // Gere um ID aleatório para o álbum
@@ -46,7 +81,6 @@ const insertAlbum = async (album) => {
     TableName: tableName,
     Item: album
   };
-  console.log(album.id);
   try {
     await dynamoDB.put(params).promise();
     console.log('Álbum inserido com sucesso!');
@@ -56,35 +90,20 @@ const insertAlbum = async (album) => {
   }
 };
 
-// Função para listar todos os álbuns
+
+
+
 router.get('/', async (req, res) => {
   const params = {
     TableName: tableName
-  };
+  }
 
   try {
     const result = await dynamoDB.scan(params).promise();
-    res.status(200).json(result.Items);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Função para buscar um álbum por ID
-router.get('/:id', async (req, res) => {
-  const params = {
-    TableName: tableName,
-    Key: {
-      'id': req.params.id
-    }
-  };
-
-  try {
-    const result = await dynamoDB.get(params).promise();
-    if (result.Item) {
-      res.json(result.Item);
+    if (result.Items) {
+      console.log(result.Items)
     } else {
-      res.status(404).json({ error: 'Álbum não encontrado' });
+      res.status(404).json({ error: 'Tabela não encontrada' });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -139,6 +158,70 @@ router.delete('/', async (req, res) => {
     res.status(200).json({ message: 'Tabela de álbuns limpa com sucesso!' });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao limpar a tabela de álbuns' });
+  }
+});
+
+router.get('/buscaIndex/:artista', async (req, res) => {
+  const params = {
+    TableName: tableName,
+    IndexName: 'ArtistaIndex',
+    KeyConditionExpression: 'artista = :artista',
+    ExpressionAttributeValues: {
+      ':artista': req.params.artista
+    }
+  };
+
+  try {
+    const result = await dynamoDB.query(params).promise();
+    res.status(200).json(result.Items);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/buscaAlbum/:nome', async (req, res) => {
+  const params = {
+    TableName: tableName,
+    FilterExpression: 'nome = :nome',
+    ExpressionAttributeValues: {
+      ':nome': req.params.nome
+    }
+  };
+
+  try {
+    const result = await dynamoDB.scan(params).promise();
+    res.status(200).json(result.Items);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+})
+
+router.put('/atualizaAlbum/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nome, artista, ano, generos, faixas, lancamento } = req.body;
+
+  const params = {
+    TableName: tableName,
+    Key: {
+      id: id
+    },
+    UpdateExpression: 'set nome = :nome, artista = :artista, ano = :ano, generos = :generos, faixas = :faixas, lancamento = :lancamento',
+    ExpressionAttributeValues: {
+      ':nome': nome,
+      ':artista': artista,
+      ':ano': ano,
+      ':generos': generos,
+      ':faixas': faixas,
+      ':lancamento': lancamento
+    },
+    ReturnValues: 'ALL_NEW'
+  };
+
+  try {
+    const result = await dynamoDB.update(params).promise();
+    res.status(200).json(result.Attributes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
