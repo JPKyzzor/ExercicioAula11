@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 
-mongoose.connect('mongodb://127.0.0.1:27017/albums', {
-});
+mongoose.connect('mongodb://127.0.0.1:27017/albums', {});
 
 mongoose.connection.on('connected', () => {
   console.log('MongoDB conectado');
@@ -15,7 +14,7 @@ mongoose.connection.on('error', (err) => {
 
 const albumSchema = new mongoose.Schema({
   nome: String,
-  artista: String,
+  artista: { type: String, index: { type: 'hashed' } },
   ano: String,
   generos: [String],
   faixas: [String],
@@ -24,6 +23,7 @@ const albumSchema = new mongoose.Schema({
 
 const Album = mongoose.model('Album', albumSchema);
 
+// Consultar todos os álbuns
 router.get('/', async (req, res) => {
   try {
     const docs = await Album.find();
@@ -33,6 +33,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Consultar um álbum por ID
 router.get('/:id', async (req, res) => {
   const id = req.params.id;
   try {
@@ -47,11 +48,36 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Consultar um álbum por nome
+router.get('/buscaAlbum/:nome', async (req, res) => {
+  try {
+    const doc = await Album.find({ nome: req.params.nome });
+    if (doc) {
+      res.status(200).json(doc);
+    } else {
+      res.status(404).json({ error: 'Álbum não encontrado' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Consultar álbuns pelo nome do artista usando um índice
+router.get('/buscaIndex/:artista', async (req, res) => {
+  try {
+    const docs = await Album.find({ artista: req.params.artista });
+    res.status(200).json(docs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Inserir múltiplos álbuns
 router.post('/', async (req, res) => {
   const albums = req.body.albums;
   try {
     await Album.insertMany(albums);
-    console.log('Álbuns inseridos com sucesso!');
+    //console.log('Álbuns inseridos com sucesso!');
     res.status(201).json({ message: 'Álbuns inseridos com sucesso' });
   } catch (err) {
     console.error('Erro ao inserir álbuns:', err.message);
@@ -59,12 +85,30 @@ router.post('/', async (req, res) => {
   }
 });
 
+// Atualizar um álbum
+router.put('/atualizaAlbum/:id', async (req, res) => {
+  const { id } = req.params;
+  const { nome, artista, ano, generos, faixas, lancamento } = req.body;
 
-// Rota para deletar todos os registros presentes no banco de dados
+  try {
+    const doc = await Album.findByIdAndUpdate(id, {
+      nome, artista, ano, generos, faixas, lancamento
+    }, { new: true });
+
+    if (doc) {
+      res.status(200).json(doc);
+    } else {
+      res.status(404).json({ error: 'Álbum não encontrado' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Deletar todos os álbuns
 router.delete('/', async (req, res) => {
   try {
     const deleteResult = await Album.deleteMany({});
-    console.log(`${deleteResult.deletedCount} registros deletados com sucesso!`);
     res.status(200).json({ message: `${deleteResult.deletedCount} registros deletados com sucesso!` });
   } catch (error) {
     console.error('Erro ao excluir registros:', error.message);
